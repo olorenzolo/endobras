@@ -742,10 +742,11 @@ footer{background:var(--charcoal);padding:clamp(3rem,5vw,4rem) clamp(1.5rem,7vw,
         </div>
       </div>
     </div>
-    <button class="cta-btn-full">
-      Entrar em Contato
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <button class="cta-btn-full" id="ctaSubmitBtn" onclick="enviarFormulario()">
+      <span id="ctaBtnText">Entrar em Contato</span>
+      <svg id="ctaBtnArrow" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
+    <div id="ctaMsg" style="display:none;margin-top:1rem;font-size:.85rem;letter-spacing:.06em;text-align:center;border-radius:.75rem;padding:.9rem 1.4rem;"></div>
   </div>
   <div class="cta-trust reveal d3">
     <span>Visita técnica gratuita</span><span class="trust-sep"></span>
@@ -849,6 +850,62 @@ updateProgress();
 function selectTipo(btn){
   btn.closest('.cta-toggle-wrap').querySelectorAll('.cta-toggle').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+}
+
+
+/* ── GOOGLE SHEETS FORM ── */
+function enviarFormulario() {
+  const btn     = document.getElementById('ctaSubmitBtn');
+  const btnText = document.getElementById('ctaBtnText');
+  const msg     = document.getElementById('ctaMsg');
+
+  const nome     = document.querySelector('.cta-form-full input[type="text"]').value.trim();
+  const email    = document.querySelector('.cta-form-full input[type="email"]').value.trim();
+  const telefone = document.querySelector('.cta-form-full input[type="tel"]').value.trim();
+  const cidade   = document.querySelectorAll('.cta-form-full input[type="text"]')[1].value.trim();
+  const tipoBtn  = document.querySelector('.cta-toggle.active');
+  const tipo     = tipoBtn ? tipoBtn.dataset.val : '';
+
+  if (!nome || !email || !telefone || !cidade) {
+    msg.style.display = 'block';
+    msg.style.background = 'rgba(255,80,80,.15)';
+    msg.style.color = '#ff9999';
+    msg.textContent = 'Por favor, preencha todos os campos.';
+    return;
+  }
+
+  btn.disabled = true;
+  btnText.textContent = 'Enviando...';
+  msg.style.display = 'none';
+
+  const SHEET_URL = 'https://script.google.com/macros/s/AKfycbwtb84e9JuMxoB_j960AAlpiTrXyNNuO42Ox3b9rUOM0DY8FjniITgmVhjFwqrwZ0A1/exec';
+
+  fetch(SHEET_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nome, email, telefone, cidade, tipo })
+  })
+  .then(() => {
+    msg.style.display = 'block';
+    msg.style.background = 'rgba(42,191,191,.15)';
+    msg.style.color = '#7ADEDE';
+    msg.textContent = '✓ Mensagem enviada! Entraremos em contato em breve.';
+    btnText.textContent = 'Enviado!';
+    // Clear fields
+    document.querySelector('.cta-form-full input[type="text"]').value = '';
+    document.querySelector('.cta-form-full input[type="email"]').value = '';
+    document.querySelector('.cta-form-full input[type="tel"]').value = '';
+    document.querySelectorAll('.cta-form-full input[type="text"]')[1].value = '';
+  })
+  .catch(() => {
+    msg.style.display = 'block';
+    msg.style.background = 'rgba(255,80,80,.15)';
+    msg.style.color = '#ff9999';
+    msg.textContent = 'Erro ao enviar. Tente novamente ou nos contate pelo WhatsApp.';
+    btn.disabled = false;
+    btnText.textContent = 'Entrar em Contato';
+  });
 }
 
 /* Scroll reveal */
